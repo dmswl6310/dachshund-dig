@@ -11,7 +11,7 @@
     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
   body{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100dvh}
   /* 화면 크기에 맞춰 16:10 비율로 최대한 크게 */
-  canvas{width:min(100vw,160vh);width:min(100vw,160dvh);height:auto;touch-action:none;cursor:pointer;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  canvas{width:min(100vw,160vh);width:min(100vw,160dvh);height:auto;touch-action:none;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
   #rotate{display:none;margin-top:18px;color:#ffe3c2;font:20px 'Jua','Malgun Gothic',sans-serif;text-align:center;padding:0 16px}
   @media (max-width:900px), (max-height:500px){ canvas{border-radius:0;box-shadow:none} }
   @media (orientation:portrait) and (max-width:900px){ #rotate{display:block} }
@@ -30,8 +30,9 @@ const FONT = "'Jua', 'Malgun Gothic', sans-serif";
 const SUBSTEP = 5;          // 빠르게 움직여도 판정이 새지 않도록 5px씩 나눠서 검사
 const OFF_LIMIT = 0.45;     // 선 밖에 이 시간(초) 이상 머물면 하트 -1
 const CHARM_R = 150;        // 동물 유혹 범위
-const CHARM_SPEED = 210;    // 유혹 범위 안에서 강아지 최대 속도(px/s)
-const CHARM_PULL = 230;     // 동물 쪽으로 끌려가는 힘(px/s, 가까울수록 셈)
+const CHARM_SPEED = 260;    // 유혹 범위 안에서 강아지 최대 속도(px/s)
+const CHARM_PULL = 200;     // 동물 쪽으로 끌려가는 힘(px/s, 가까울수록 셈)
+const CHARM_MAX = 0.55;     // 끌림은 최대 이동속도의 이만큼까지만 (그래서 항상 탈출 가능)
 
 // ================== 스테이지 데이터 ==================
 // pts: 굴 경로 기준점 (부드러운 곡선으로 이어짐). 첫 점의 y = 이전 스테이지 끝 점의 y (이어지는 연출용)
@@ -45,27 +46,26 @@ const BOMB_WAIT = 1.2;   // 폭탄 하나당 기다릴 시간 보너스(초)
 const ANIMAL_WAIT = 1.0; // 동물 하나당 느려지는 시간 보너스(초)
 const STAGES = [
   { name:'쭉쭉 출발',
-    intro:'강아지를 꾹 누른 채 길을 따라 GOAL까지 파요!',
     pts:[[30,260],[250,270],[500,250],[750,270],[935,260]] },
   { name:'꼬불빙글',
     pts:[[30,260],[150,260],[240,350],[340,390],[440,350],[520,300],[510,230],[440,210],[380,240],[385,300],[450,320],[560,290],[650,370],[760,420],[860,330],[935,270]] },
-  { name:'쾅! 폭탄 조심', intro:'💣 새 위험! 빨간 원에 폭탄이 떨어져요. 멈췄다가 지나가요!',
-    pts:[[30,270],[120,270],[170,330],[230,270],[290,340],[340,440],[420,470],[480,400],[440,330],[500,260],[570,210],[640,260],[690,350],[750,430],[820,460],[880,400],[935,330]],
-    bombs:[0.2,0.4,0.6,0.8] },
+  { name:'쾅! 폭탄 조심',
+    pts:[[30,270],[100,270],[140,330],[190,270],[240,340],[290,280],[330,370],[300,450],[380,500],[460,450],[430,380],[500,320],[560,250],[620,300],[600,380],[680,440],[760,400],[740,320],[820,280],[880,360],[935,330]],
+    bombs:[0.2,0.42,0.62,0.82], bombPeriod:2.2 },
   { name:'빙글빙글 폭탄',
-    pts:[[30,330],[140,330],[230,400],[320,430],[380,380],[360,320],[300,320],[290,380],[350,450],[480,460],[600,400],[650,330],[610,270],[550,290],[560,360],[650,400],[800,380],[935,300]],
-    bombs:[0.12,0.25,0.38,0.5,0.62,0.75,0.88], bombPeriod:2.0, bombWarn:0.85, bombR:58 },
-  { name:'토끼 친구들', intro:'🐰 새 위험! 친구들 근처에선 느려지고 그쪽으로 끌려가요. 버텨요!',
+    pts:[[30,330],[140,330],[200,420],[160,520],[260,560],[330,500],[300,430],[240,450],[270,520],[380,540],[480,470],[440,380],[360,330],[300,250],[380,190],[480,220],[520,300],[600,360],[700,330],[660,250],[600,280],[640,350],[760,420],[860,520],[920,440],[880,360],[935,300]],
+    bombs:[0.1,0.22,0.35,0.48,0.6,0.73,0.86], bombPeriod:2.0, bombWarn:0.85, bombR:58 },
+  { name:'토끼 친구들',
     pts:[[30,300],[200,310],[350,250],[500,260],[650,360],[800,380],[935,300]], animals:[0.25,0.52,0.78] },
   { name:'유혹의 지그재그',
     pts:[[30,300],[140,300],[220,470],[320,220],[420,470],[520,220],[620,470],[720,260],[820,400],[935,350]],
     animals:[[220,555],[420,555],[620,555]], pull:1.4, bombs:[0.25,0.47,0.7,0.88], bombPeriod:2.2 },
-  { name:'물이 차올라!', flood:190, floodDelay:1.2, intro:'🌊 새 위험! 뒤에서 물이 빠르게 따라와요. 멈추면 잡혀요!',
-    pts:[[30,350],[200,350],[300,450],[200,540],[400,560],[600,520],[700,420],[600,330],[450,280],[350,200],[550,175],[750,220],[850,320],[935,400]] },
-  { name:'깜깜한 땅속', dark:true, intro:'🔦 새 위험! 너무 깊어서 강아지 주변만 보여요. 토끼도 숨어있어요!',
+  { name:'물이 차올라!', flood:190, floodDelay:1.2,
+    pts:[[30,350],[200,350],[300,450],[200,540],[400,570],[560,540],[520,460],[400,420],[380,330],[470,260],[600,300],[700,420],[800,540],[900,500],[880,390],[760,330],[640,200],[760,170],[880,220],[930,300],[935,400]] },
+  { name:'깜깜한 땅속', dark:true,
     pts:[[30,400],[180,400],[300,330],[420,300],[500,340],[480,420],[400,430],[380,370],[450,300],[600,260],[720,330],[760,430],[700,500],[620,460],[660,390],[800,360],[935,380]],
     animals:[0.3,0.62,0.88] },
-  { name:'대모험', flood:175, floodDelay:1.5, pull:1.3, bombPeriod:2.2, bombR:56, intro:'🏆 마지막! 폭탄 + 친구들 + 물. 전부 이겨내요!',
+  { name:'대모험', flood:175, floodDelay:1.5, pull:1.3, bombPeriod:2.2, bombR:56,
     pts:[[30,380],[160,380],[260,300],[220,220],[150,250],[180,320],[300,350],[420,460],[540,500],[620,420],[560,350],[480,380],[520,450],[680,500],[800,420],[760,300],[860,230],[935,260]],
     bombs:[0.18,0.36,0.55,0.7,0.9], animals:[[380,240],[300,545],[650,290]] },
 ];
@@ -213,7 +213,7 @@ function makeStage(i){
     animals, bombs, booms: [], charm: null,
     flood: st.flood ? { idx: -st.flood/4 * (st.floodDelay ?? 2.0), v: st.flood/4 } : null,
     got: 0, onDist: 0, totDist: 0, inv: 0, shake: 0, off: 0,
-    started: false, drag: false, parts: [], pops: [], result: null,
+    started: false, drag: false, parts: [], sparks: [], ret: null, result: null,
   };
 }
 function startStage(i){ G = makeStage(i); scene = 'play'; }
@@ -228,10 +228,8 @@ function goNext(){
 function grab(){
   const d = hyp(mx - G.dog.x, my - G.dog.y);
   if (d < (touch ? 95 : 60)){ G.drag = true; G.started = true; }   // 손가락은 더 넉넉하게 잡힘
-  else if (G.started) pop(mx, my, '강아지를 잡고 끌어요!', '#fff');
 }
 
-function pop(x, y, text, color){ G.pops.push({ x, y, text, color, t: 1.3 }); }
 
 function finish(win, reason){
   const acc = G.totDist > 0 ? G.onDist / G.totDist : 1;
@@ -257,20 +255,22 @@ function update(dt){
   const g = G, d = g.dog;
   g.inv = Math.max(0, g.inv - dt); g.shake = Math.max(0, g.shake - dt);
   if (g.started){ g.tLeft -= dt; g.clock += dt; }
-  if (g.tLeft <= 0){ g.tLeft = 0; return finish(false, '시간 초과!'); }
+  if (g.tLeft <= 0){ g.tLeft = 0; return finish(false, 'time'); }
 
   // 동물 움직임 + 유혹
   let speed = Infinity, px = 0, py = 0; g.charm = null;
   for (const a of g.animals){
     a.x = a.bx + Math.sin(T*1.3 + a.ph)*22; a.y = a.by + Math.sin(T*2.6 + a.ph)*4;
     const dd = hyp(a.x - d.x, a.y - d.y);
-    if (dd < CHARM_R && g.started){
+    if (dd < CHARM_R && dd > 2 && g.started){
       const pw = g.st.pull || 1;
-      speed = CHARM_SPEED / pw; const f = 1 - dd/CHARM_R;
+      speed = CHARM_SPEED; const f = 1 - dd/CHARM_R;
       px += (a.x - d.x)/dd * CHARM_PULL * pw * f; py += (a.y - d.y)/dd * CHARM_PULL * pw * f;
       g.charm = a;
     }
   }
+  const pm = hyp(px, py), cap = CHARM_SPEED * CHARM_MAX;
+  if (pm > cap){ px *= cap/pm; py *= cap/pm; }
 
   // 이동: 마우스에 바로 붙음 (유혹 중엔 느려짐). 5px씩 쪼개서 매 칸마다 판정
   const moveBy = (vx, vy) => {
@@ -285,7 +285,12 @@ function update(dt){
     }
     return false;
   };
-  if (g.drag){
+  if (g.ret){
+    g.ret.t = Math.min(1, g.ret.t + dt/0.35);
+    const k = ease(g.ret.t), p = g.path[g.prog];
+    d.x = g.ret.x + (p[0] - g.ret.x)*k; d.y = g.ret.y + (p[1] - g.ret.y)*k;
+    if (g.ret.t >= 1){ g.ret = null; g.trail.push([d.x, d.y, 'break']); }
+  } else if (g.drag){
     const dx = mx - d.x, dy = my - d.y, dist = hyp(dx, dy);
     if (dist > 1){
       d.ang = Math.atan2(dy, dx);
@@ -299,7 +304,7 @@ function update(dt){
   // 선 밖에 오래 머물면 하트 -1
   if (g.started && g.drag && g.off > g.tol){
     g.offT += dt;
-    if (g.offT > OFF_LIMIT && g.inv <= 0){ hurt('앗! 길을 벗어났어요'); if (scene !== 'play') return; }
+    if (g.offT > OFF_LIMIT && g.inv <= 0){ hurt('path'); if (scene !== 'play') return; }
   } else g.offT = 0;
 
   // 폭탄
@@ -309,7 +314,7 @@ function update(dt){
       b.next += b.period; sfx.boom(); g.shake = Math.max(g.shake, 0.25);
       g.booms.push({ x: b.x, y: b.y, r: b.r, t: 0.45 });
       for (let k = 0; k < 18; k++){ const a = Math.random()*7, v = 80 + Math.random()*160; g.parts.push({ x: b.x, y: b.y, vx: Math.cos(a)*v, vy: Math.sin(a)*v - 80, t: 0.7, s: 3 + Math.random()*4 }); }
-      if (hyp(d.x - b.x, d.y - b.y) < b.r + 10 && g.inv <= 0){ hurt('쾅! 폭탄에 맞았어요'); if (scene !== 'play') return; }
+      if (hyp(d.x - b.x, d.y - b.y) < b.r + 10 && g.inv <= 0){ hurt('bomb'); if (scene !== 'play') return; }
     }
   }
   for (const b of g.booms) b.t -= dt;
@@ -318,19 +323,17 @@ function update(dt){
   // 차오르는 물
   if (g.flood && g.started){
     g.flood.idx += g.flood.v * dt;
-    if (g.flood.idx >= g.prog - 3 && g.inv <= 0){
-      g.flood.idx = g.prog - 70;
-      hurt('물에 따라잡혔어요!'); if (scene !== 'play') return;
-    }
+    if (g.flood.idx >= g.prog - 3){ sfx.hurt(); return finish(false, 'flood'); }
   }
 
   for (const b of g.bones) if (!b.got && hyp(g.path[b.k][0]-d.x, g.path[b.k][1]-d.y) < 24){
-    b.got = true; g.got++; sfx.bone(); pop(d.x, d.y - 30, '뼈다귀 +150', '#fff6b0');
+    b.got = true; g.got++; sfx.bone();
+    for (let k = 0; k < 8; k++){ const a = k/8*Math.PI*2; g.sparks.push({ x: d.x, y: d.y - 10, vx: Math.cos(a)*120, vy: Math.sin(a)*120 - 40, t: 0.6 }); }
   }
   for (const p of g.parts){ p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 400*dt; p.t -= dt; }
   g.parts = g.parts.filter(p => p.t > 0);
-  for (const p of g.pops){ p.t -= dt; p.y -= 30*dt; }
-  g.pops = g.pops.filter(p => p.t > 0);
+  for (const p of g.sparks){ p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.92; p.vy *= 0.92; p.t -= dt; }
+  g.sparks = g.sparks.filter(p => p.t > 0);
 
   // GOAL 구멍에 닿기만 하면 클리어 (길 끝부분까지 왔을 때)
   const e = g.path[g.N-1];
@@ -355,17 +358,16 @@ function track(step){
     }
   }
   if (bd <= g.tol){ g.prog = best; return false; }
-  if (bd > g.tol * 2 && g.inv <= 0){ hurt('앗! 길을 벗어났어요'); return true; }
+  if (bd > g.tol * 2 && g.inv <= 0){ hurt('path'); return true; }
   return false;
 }
 
-function hurt(msg){
+// kind: 'path' 길 이탈 / 'bomb' 폭탄  → 하트 -1, 강아지는 길로 미끄러져 돌아감
+function hurt(kind){
   const g = G, d = g.dog;
-  g.hearts--; g.inv = 1.0; g.shake = 0.4; g.drag = false; g.offT = 0; sfx.hurt();
-  pop(d.x, d.y - 30, msg, '#ffdddd');
-  const p = g.path[g.prog]; d.x = p[0]; d.y = p[1];
-  g.trail.push([d.x, d.y, 'break']);
-  if (g.hearts <= 0) finish(false, msg.replace('앗! ', '') );
+  g.hearts--; g.inv = 1.2; g.shake = 0.4; g.drag = false; g.offT = 0; sfx.hurt();
+  g.ret = { x: d.x, y: d.y, t: 0 };
+  if (g.hearts <= 0) finish(false, kind);
 }
 
 // ================== 그리기 도우미 ==================
@@ -576,7 +578,8 @@ function drawWorld(g, ox, withDog){
   for (const p of g.parts){ ctx.fillStyle = `rgba(110,65,30,${Math.min(1, p.t*2)})`; ctx.fillRect(p.x, p.y, p.s, p.s); }
 
   if (withDog){
-    if (!(g.inv > 0 && Math.floor(T*12) % 2)) drawDog(d.x, d.y, d.dispAng, d.walk, 1, g.inv > 0.6, !!g.charm);
+    if (!(g.inv > 0 && !g.ret && Math.floor(T*12) % 2)) drawDog(d.x, d.y, d.dispAng, d.walk, 1, g.inv > 0.5, !!g.charm);
+    if (g.inv > 0.3){ for (let k = 0; k < 3; k++){ const a = T*6 + k*2.1; star(d.x + Math.cos(a)*22, d.y - 32 + Math.sin(a)*6, 6, true); } }
     if (g.started && g.off > g.tol){
       ctx.strokeStyle = `rgba(255,60,60,${0.5 + Math.sin(T*20)*0.3})`; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(d.x, d.y, 34, 0, 7); ctx.stroke();
@@ -606,21 +609,18 @@ function drawPlay(){
   drawGrass();
   ctx.restore();
 
-  for (const p of g.pops){ ctx.globalAlpha = Math.min(1, p.t*2); text(p.text, p.x, p.y, 22, p.color, 'center', 'rgba(60,20,0,0.8)'); ctx.globalAlpha = 1; }
+  for (const p of g.sparks){ ctx.globalAlpha = Math.min(1, p.t*2); star(p.x, p.y, 6, true); ctx.globalAlpha = 1; }
 
-  if (!g.drag){
+  // 잡을 수 있을 때: 강아지 둘레가 반짝이며 숨쉼 (글 없이). 처음엔 손가락이 톡톡
+  if (!g.drag && !g.ret){
     const pulse = 1 + Math.sin(T*6)*0.08;
     ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3; ctx.setLineDash([6, 6]);
     ctx.beginPath(); ctx.arc(d.x, d.y, 40*pulse, 0, 7); ctx.stroke(); ctx.setLineDash([]);
-    const msg = g.started ? '강아지를 다시 꾹 누르고 이어서 파요!' : (touch ? '강아지를 꾹 누른 채 끌어서 출발!' : '강아지를 꾹 눌러서 출발!');
-    const tx = Math.min(W - 200, Math.max(200, d.x + 160));
-    ctx.fillStyle = 'rgba(40,20,5,0.75)'; rr(tx - 190, d.y - 95, 380, 40, 14); ctx.fill();
-    text(msg, tx, d.y - 75, 20, '#fff');
-  }
-  if (!g.started && g.st.intro){
-    ctx.fillStyle = 'rgba(255,248,230,0.95)'; rr(W/2 - 340, 62, 680, 44, 16); ctx.fill();
-    ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 3; ctx.stroke();
-    text(g.st.intro, W/2, 85, 20, '#7a3f17');
+    if (!g.started){
+      const tap = Math.abs(Math.sin(T*4))*10;
+      ctx.font = `34px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('👆', d.x + 14, d.y + 44 + tap);
+    }
   }
   drawHUD(g);
 }
@@ -673,7 +673,6 @@ function drawMenu(){
   text('닥스훈트의', W/2, 44, 28, '#fff', 'center', '#7a3f17');
   text('땅굴 대모험', W/2, 92, 58, '#ffd23f', 'center', '#7a3f17');
   ctx.fillStyle = 'rgba(40,20,5,0.55)'; rr(W/2 - 330, 150, 660, 370, 24); ctx.fill();
-  text('스테이지를 골라주세요', W/2, 180, 24, '#fff');
   const colors = ['#ffb347','#ff8fab','#7cc6fe','#9ad06a','#c79bff'];
   STAGES.forEach((st, i) => {
     const row = Math.floor(i/5), col = i % 5;
@@ -694,17 +693,17 @@ function drawEnd(){
     text('스테이지 클리어!', W/2, 160, 44, '#ff8c1a', 'center', '#fff');
     for (let k = 0; k < 3; k++) star(W/2 - 60 + k*60, 225, 24 + (k === 1 ? 6 : 0), k < r.stars);
     text(`점수 ${r.score}`, W/2, 285, 32, '#7a3f17');
-    text(`정확도 ${Math.round(r.acc*100)}%  ·  남은 시간 ${G.tLeft.toFixed(1)}초  ·  뼈다귀 ${G.got}/3`, W/2, 322, 18, '#a0683a');
+    text(`🎯 ${Math.round(r.acc*100)}%     ⏱ ${G.tLeft.toFixed(1)}     🦴 ${G.got}/3`, W/2, 322, 20, '#a0683a');
     drawDog(W/2, 365, 0, T*10, 1.1);
     const hasNext = G.i < STAGES.length - 1;
     button(W/2 - 225, 405, 140, 60, '다시하기', () => startStage(G.i), '#9ad06a');
     button(W/2 - 70, 405, 140, 60, '메뉴', () => { scene = 'menu'; }, '#7cc6fe');
     button(W/2 + 85, 405, 140, 60, hasNext ? '다음 ▶' : '엔딩 ▶', goNext, '#ffb347');
   } else {
-    text('앗, 실패!', W/2, 165, 50, '#ff5a7a', 'center', '#fff');
-    text(r.reason, W/2, 225, 28, '#7a3f17');
-    drawDog(W/2, 300, 0, 0, 1.3, true);
-    text('다시 도전해봐요! 🐾', W/2, 350, 22, '#a0683a');
+    text('앗!', W/2, 165, 54, '#ff5a7a', 'center', '#fff');
+    const icon = { time: '⏱', bomb: '💣', flood: '🌊', path: '💫' }[r.reason] || '💫';
+    ctx.font = `64px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(icon, W/2, 240);
+    drawDog(W/2, 330, 0, 0, 1.3, true);
     button(W/2 - 160, 395, 150, 64, '다시하기', () => startStage(G.i), '#9ad06a');
     button(W/2 + 10, 395, 150, 64, '메뉴', () => { scene = 'menu'; }, '#7cc6fe');
   }
@@ -758,7 +757,6 @@ function drawEnding(dt){
   const total = (save.score || []).reduce((a, b) => a + (b || 0), 0);
   if (t > 1.0) text(`총 점수 ${total.toLocaleString()}`, W/2, 474, 30, '#7a3f17', 'center', '#fff');
   if (t > 1.4){
-    text('강아지를 눌러보세요!', W/2, 432, 18, 'rgba(160,82,106,0.8)');
     button(W/2 - 160, 510, 150, 58, '처음부터', () => startStage(0), '#9ad06a');
     button(W/2 + 10, 510, 150, 58, '메뉴', () => { scene = 'menu'; }, '#7cc6fe');
   }
@@ -771,11 +769,16 @@ function frame(now){
   update(dt);
   btns = [];
   ctx.clearRect(0, 0, W, H);
+  let cur = 'default';
+  if (scene === 'play' && G && !G.ret) cur = G.drag ? 'grabbing' : (hyp(mx - G.dog.x, my - G.dog.y) < 60 ? 'grab' : 'default');
   if (scene === 'menu') drawMenu();
   else if (scene === 'play') drawPlay();
   else if (scene === 'trans') drawTrans();
   else if (scene === 'ending') drawEnding(dt);
   else drawEnd();
+  if (btns.some(b => mx > b.x && mx < b.x+b.w && my > b.y && my < b.y+b.h)) cur = 'pointer';
+  if (scene === 'ending' && hyp(mx - W/2, my - 330) < 170) cur = 'pointer';
+  if (cv.style.cursor !== cur) cv.style.cursor = cur;
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
