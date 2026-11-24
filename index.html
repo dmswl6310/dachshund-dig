@@ -11,14 +11,14 @@
 <meta property="og:title" content="닥스훈트의 땅굴 대모험 🐾">
 <meta property="og:description" content="꾹 누르고 쭉 끌어서, 닥스훈트와 함께 땅굴을 파요! 폭탄, 토끼, 차오르는 물을 피해 GOAL까지">
 <meta property="og:url" content="https://dmswl6310.github.io/dachshund-dig/">
-<meta property="og:image" content="https://dmswl6310.github.io/dachshund-dig/og.png">
+<meta property="og:image" content="https://dmswl6310.github.io/dachshund-dig/og.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="닥스훈트의 땅굴 대모험 🐾">
 <meta name="twitter:description" content="꾹 누르고 쭉 끌어서, 닥스훈트와 함께 땅굴을 파요!">
-<meta name="twitter:image" content="https://dmswl6310.github.io/dachshund-dig/og.png">
+<meta name="twitter:image" content="https://dmswl6310.github.io/dachshund-dig/og.png?v=2">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -879,20 +879,22 @@ async function drawPoster(kind){
     drawDog(225, 320, -0.08, 1.2, 4.0, false, false, true);
     return;
   }
-  const way = []; for (let x = -20; x <= 790; x += 10) way.push([x, 440 + Math.sin(x*0.012)*55 - (x > 600 ? (x - 600)*0.05 : 0)]);
-  tunnel(way, 66, 52);
-  ctx.strokeStyle = 'rgba(255,232,195,0.25)'; ctx.lineWidth = 50; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(800, 425); ctx.quadraticCurveTo(980, 330, 1230, 420); ctx.stroke();
+  // 가운데에 옆모습 닥스훈트를 크게 (카톡이 정사각형으로 잘라도 강아지가 보이게)
+  const way = []; for (let x = -20; x <= 560; x += 10) way.push([x, 420 + Math.sin(x*0.013 + 0.6)*45]);
+  tunnel(way, 74, 58);
+  ctx.strokeStyle = 'rgba(255,232,195,0.25)'; ctx.lineWidth = 52; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(760, 400); ctx.quadraticCurveTo(950, 330, 1230, 410); ctx.stroke();
   ctx.strokeStyle = 'rgba(250,225,185,0.85)'; ctx.lineWidth = 7; ctx.stroke();
-  bone(520, way[54][1], 2.2, -0.3);
-  ctx.fillStyle = 'rgba(255,60,60,0.22)'; ctx.beginPath(); ctx.arc(1000, 372, 62, 0, 7); ctx.fill();
+  bone(200, way[22][1], 2.2, -0.3);
+  ctx.fillStyle = 'rgba(255,60,60,0.22)'; ctx.beginPath(); ctx.arc(1050, 360, 58, 0, 7); ctx.fill();
   ctx.strokeStyle = 'rgba(255,70,70,0.85)'; ctx.lineWidth = 4; ctx.setLineDash([10, 8]); ctx.stroke(); ctx.setLineDash([]);
-  ctx.save(); ctx.translate(1000, 290); ctx.scale(2.2, 2.2); drawBomb(0, 0); ctx.restore();
-  ctx.save(); ctx.translate(1090, 540); ctx.scale(2.2, 2.2); drawAnimal({ x: 0, y: 0, type: 'rabbit', ph: 0 }, true); ctx.restore();
-  drawDog(790, 425, -0.12, 1.3, 3.0, false, false, true);
-  text('닥스훈트의', 300, 62, 46, '#fff', 'center', '#7a3f17');
-  text('땅굴 대모험', 300, 135, 96, '#ffd23f', 'center', '#7a3f17');
-  ctx.fillStyle = 'rgba(40,20,5,0.72)'; rr(70, 548, 470, 56, 28); ctx.fill();
-  text('꾹 누르고 쭉 끌어서 굴을 파요! 🐾', 305, 577, 28, '#fff');
+  ctx.save(); ctx.translate(1050, 285); ctx.scale(2.1, 2.1); drawBomb(0, 0); ctx.restore();
+  ctx.save(); ctx.translate(1110, 545); ctx.scale(2.0, 2.0); drawAnimal({ x: 0, y: 0, type: 'rabbit', ph: 0 }, true); ctx.restore();
+  ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(590, 470, 170, 16, 0, 0, 7); ctx.fill();
+  drawDog(575, 408, -0.06, 1.3, 3.7, false, false, true);
+  text('닥스훈트의', 600, 50, 40, '#fff', 'center', '#7a3f17');
+  text('땅굴 대모험', 600, 122, 92, '#ffd23f', 'center', '#7a3f17');
+  ctx.fillStyle = 'rgba(40,20,5,0.72)'; rr(365, 548, 470, 56, 28); ctx.fill();
+  text('꾹 누르고 쭉 끌어서 굴을 파요! 🐾', 600, 577, 28, '#fff');
 }
 
 // ================== 메인 루프 ==================
