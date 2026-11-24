@@ -437,28 +437,32 @@ function drawDog(x, y, ang, walk, s = 1, hurt = false, charmed = false, happy = 
   ctx.restore();
 }
 
-// 실패했을 때: 벌러덩 누워 네 다리를 쫙 뻗은 닥스훈트 (X 눈, 혀 빼꼼)
+// 실패했을 때: 배를 깔고 납작 엎드려 앞다리는 앞으로, 뒷다리는 뒤로 쫙 뻗은 닥스훈트 (X 눈, 혀 빼꼼)
 function drawDogDead(x, y, s){
   const body = '#c0702e', dark = '#7a3f17';
   ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
-  ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(4, 14, 48, 6, 0, 0, 7); ctx.fill();
-  ctx.fillStyle = dark;
-  [[-21, -0.75], [-12, -0.3], [13, 0.3], [22, 0.75]].forEach(([lx, r], i) => {
-    ctx.save(); ctx.translate(lx, -8); ctx.rotate(r + Math.sin(T*18 + i)*0.04); rr(-3.5, -19, 7, 19, 3.5); ctx.fill();
-    ctx.fillStyle = '#5b2e10'; ctx.beginPath(); ctx.ellipse(0, -19, 5, 3.5, 0, 0, 7); ctx.fill(); ctx.fillStyle = dark; ctx.restore();
-  });
+  ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(4, 12, 62, 6, 0, 0, 7); ctx.fill();
+  // 쫙 뻗은 다리 (몸 뒤쪽 것 먼저)
+  ctx.fillStyle = '#6a3412';
+  ctx.save(); ctx.translate(-16, 4); ctx.rotate(Math.PI + 0.12); rr(0, -3, 26, 6.5, 3.2); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(16, 4); ctx.rotate(-0.12); rr(0, -3, 26, 6.5, 3.2); ctx.fill(); ctx.restore();
   ctx.strokeStyle = body; ctx.lineWidth = 5; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(-27, 2); ctx.quadraticCurveTo(-38, 6, -46, 4); ctx.stroke();
-  ctx.fillStyle = body; ctx.beginPath(); ctx.ellipse(0, 0, 31, 11.5, 0, 0, 7); ctx.fill();
-  ctx.fillStyle = '#e8ad70'; ctx.beginPath(); ctx.ellipse(1, -5, 22, 5, 0, 0, 7); ctx.fill();
-  ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(30, 12, 6, 10, 0.3, 0, 7); ctx.fill();
-  ctx.fillStyle = body; ctx.beginPath(); ctx.arc(34, 2, 11, 0, 7); ctx.fill();
-  ctx.fillStyle = '#d68a45'; ctx.beginPath(); ctx.ellipse(44, -1, 9.5, 6, -0.15, 0, 7); ctx.fill();
-  ctx.fillStyle = '#2a1a12'; ctx.beginPath(); ctx.arc(52, -4, 3, 0, 7); ctx.fill();
-  ctx.fillStyle = '#ff7a95'; ctx.beginPath(); ctx.ellipse(45, 7, 3.5, 5, 0.3, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-28, 0); ctx.lineTo(-50, 3); ctx.stroke();                 // 축 늘어진 꼬리
+  ctx.fillStyle = body; ctx.beginPath(); ctx.ellipse(0, 0, 32, 9.5, 0, 0, 7); ctx.fill(); // 납작한 몸
+  ctx.fillStyle = dark;
+  ctx.save(); ctx.translate(-18, 7); ctx.rotate(Math.PI - 0.05); rr(0, -3.5, 28, 7, 3.5); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(18, 7); ctx.rotate(0.05); rr(0, -3.5, 28, 7, 3.5); ctx.fill(); ctx.restore();
+  ctx.fillStyle = '#5b2e10';
+  for (const fx of [-46, 46]){ ctx.beginPath(); ctx.ellipse(fx, 8.5, 4.5, 3.8, 0, 0, 7); ctx.fill(); }
+  // 바닥에 턱을 댄 머리
+  ctx.fillStyle = body; ctx.beginPath(); ctx.arc(34, -2, 11, 0, 7); ctx.fill();
+  ctx.fillStyle = '#d68a45'; ctx.beginPath(); ctx.ellipse(45, 3, 10, 6, 0.1, 0, 7); ctx.fill();
+  ctx.fillStyle = '#2a1a12'; ctx.beginPath(); ctx.arc(54, 2, 3, 0, 7); ctx.fill();
+  ctx.fillStyle = '#ff7a95'; ctx.beginPath(); ctx.ellipse(46, 11, 3.2, 4.5, 0.2, 0, 7); ctx.fill();
+  ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(29, 4, 5.5, 9, 0.9, 0, 7); ctx.fill();   // 바닥에 펼쳐진 귀
   ctx.strokeStyle = '#2a1a12'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(33, -1); ctx.lineTo(39, 5); ctx.moveTo(39, -1); ctx.lineTo(33, 5); ctx.stroke();
-  for (let k = 0; k < 3; k++){ const a = T*4 + k*2.1; star(36 + Math.cos(a)*18, -14 + Math.sin(a)*5, 4.5, true); }
+  ctx.beginPath(); ctx.moveTo(34, -9); ctx.lineTo(40, -3); ctx.moveTo(40, -9); ctx.lineTo(34, -3); ctx.stroke();
+  for (let k = 0; k < 3; k++){ const a = T*4 + k*2.1; star(36 + Math.cos(a)*18, -22 + Math.sin(a)*5, 4.5, true); }
   ctx.restore();
 }
 
