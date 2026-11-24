@@ -58,7 +58,7 @@ const CHARM_MAX = 0.55;     // 끌림은 최대 이동속도의 이만큼까지�
 // pts: 굴 경로 기준점 (부드러운 곡선으로 이어짐). 첫 점의 y = 이전 스테이지 끝 점의 y (이어지는 연출용)
 // 제한시간 규칙은 모든 스테이지 동일 (길이 ÷ PACE + 폭탄·동물 하나당 보너스). 난이도는 길 모양과 위험 요소로 올림
 // bombs: 폭탄 떨어지는 위치(길 전체 중 비율), animals: 유혹하는 동물 위치(비율, 또는 [x,y] 좌표)
-// bombPeriod/bombWarn/bombR: 폭탄 주기·경고시간·범위, pull: 동물 유혹 세기 배율
+// bombPeriod/bombWarn/bombR: 폭탄 주기·경고시간·범위, pull: 동물 유혹 세기 배율, charmR: 유혹 범위, charmSpeed: 유혹 중 최대 속도
 // flood: 뒤에서 차오르는 물 속도(px/s), floodDelay: 물 출발 전 여유(초), dark: 강아지 주변만 보임
 const TOL = 22;          // 길 폭(허용 거리) - 모든 스테이지 동일
 const PACE = 230;        // 제한시간 계산용 속도(px/s) - 클수록 빠듯
@@ -80,15 +80,15 @@ const STAGES = [
     animals:[0.2,0.4,0.6,0.8], pull:1.3 },
   { name:'유혹의 지그재그',
     pts:[[30,300],[140,300],[220,470],[320,220],[420,470],[520,220],[620,470],[720,260],[820,400],[935,350]],
-    animals:[[220,555],[420,555],[620,555]], pull:1.7, bombs:[0.25,0.47,0.7,0.88], bombPeriod:2.0 },
+    animals:[[220,555],[420,555],[620,555]], pull:1.7, charmR:195, charmSpeed:200, bombs:[0.15,0.3,0.45,0.6,0.75,0.9], bombPeriod:2.0, bombWarn:0.85, bombR:56 },
   { name:'물이 차올라!', tip:'🌊 도망쳐!', flood:235, floodDelay:0.4,
     pts:[[30,350],[200,350],[300,450],[200,540],[400,570],[560,540],[520,460],[400,420],[380,330],[470,260],[600,300],[700,420],[800,540],[900,500],[880,390],[760,330],[640,200],[760,170],[880,220],[930,300],[935,400]] },
   { name:'깜깜한 땅속', tip:'🔦 깜깜!', dark:true,
     pts:[[30,400],[180,400],[300,330],[420,300],[500,340],[480,420],[400,430],[380,370],[450,300],[600,260],[720,330],[760,430],[700,500],[620,460],[660,390],[800,360],[935,380]],
     animals:[0.3,0.62,0.88] },
-  { name:'대모험', tip:'🏆 마지막!', flood:175, floodDelay:1.5, pull:1.3, bombPeriod:2.2, bombR:56,
+  { name:'대모험', tip:'🏆 마지막!', flood:195, floodDelay:1.0, pull:1.5, charmR:185, charmSpeed:225, bombPeriod:2.0, bombWarn:0.9, bombR:58,
     pts:[[30,380],[160,380],[260,300],[220,220],[150,250],[180,320],[300,350],[420,460],[540,500],[620,420],[560,350],[480,380],[520,450],[680,500],[800,420],[760,300],[860,230],[935,260]],
-    bombs:[0.18,0.36,0.55,0.7,0.9], animals:[[380,240],[300,545],[650,290]] },
+    bombs:[0.12,0.25,0.38,0.52,0.66,0.8,0.92], animals:[[380,240],[300,545],[650,290]] },
 ];
 
 // ================== 저장 (브라우저별) ==================
@@ -295,14 +295,15 @@ function update(dt){
   for (const a of g.animals){
     a.x = a.bx + Math.sin(T*1.3 + a.ph)*22; a.y = a.by + Math.sin(T*2.6 + a.ph)*4;
     const dd = hyp(a.x - d.x, a.y - d.y);
-    if (dd < CHARM_R && dd > 2 && g.started){
+    const CR = g.st.charmR || CHARM_R;
+    if (dd < CR && dd > 2 && g.started){
       const pw = g.st.pull || 1;
-      speed = CHARM_SPEED; const f = 1 - dd/CHARM_R;
+      speed = g.st.charmSpeed || CHARM_SPEED; const f = 1 - dd/CR;
       px += (a.x - d.x)/dd * CHARM_PULL * pw * f; py += (a.y - d.y)/dd * CHARM_PULL * pw * f;
       g.charm = a;
     }
   }
-  const pm = hyp(px, py), cap = CHARM_SPEED * CHARM_MAX;
+  const pm = hyp(px, py), cap = (g.st.charmSpeed || CHARM_SPEED) * CHARM_MAX;
   if (pm > cap){ px *= cap/pm; py *= cap/pm; }
 
   // 이동: 마우스에 바로 붙음 (유혹 중엔 느려짐). 5px씩 쪼개서 매 칸마다 판정
