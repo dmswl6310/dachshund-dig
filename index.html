@@ -190,6 +190,29 @@ function goFull(){
   const el = document.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen;
   try { const r = req.call(el, { navigationUI: 'hide' }); if (r && r.then) r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch (e) {}
 }
+function toggleFull(){
+  if (isFull()){ const ex = document.exitFullscreen || document.webkitExitFullscreen; try { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
+  else goFull();
+}
+let autoFullDone = false;   // 휴대폰에선 맨 처음 한 번만 자동으로 전체화면 (그 뒤엔 버튼으로)
+
+// 전체화면 켜기/끄기 버튼: 모든 화면에서 보임 (플레이 중엔 하트 칸 왼쪽)
+function drawFullBtn(){
+  if (!(CAN_FULL || IN_KAKAO) || scene === 'trans') return;
+  const inPlay = scene === 'play', sz = inPlay ? 40 : 46, x = inPlay ? W - 280 : W - 62, y = inPlay ? 10 : 14, full = isFull();
+  const hover = mx > x && mx < x + sz && my > y && my < y + sz;
+  ctx.fillStyle = hover ? 'rgba(255,255,255,0.98)' : 'rgba(255,255,255,0.85)'; rr(x, y, sz, sz, 12); ctx.fill();
+  const c = x + sz/2, m = y + sz/2, a = sz*0.24, l = sz*0.13;
+  ctx.strokeStyle = '#7a3f17'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const [sx, sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){
+    const px = c + sx*a, py = m + sy*a;   // 켜기: 모서리가 바깥쪽 ㄱ, 끄기: 안쪽으로 접힌 ㄱ
+    ctx.beginPath();
+    if (!full){ ctx.moveTo(px, py - sy*l); ctx.lineTo(px, py); ctx.lineTo(px - sx*l, py); }
+    else { ctx.moveTo(px - sx*l, py); ctx.lineTo(px - sx*l, py - sy*l); ctx.lineTo(px, py - sy*l); }
+    ctx.stroke();
+  }
+  btns.push({ x, y, w: sz, h: sz, cb: toggleFull, full: true });
+}
 
 // ================== 입력 ==================
 let mx = W/2, my = H/2, btns = [], touch = false;
@@ -197,8 +220,9 @@ function toLocal(e){ const r = cv.getBoundingClientRect(); mx = (e.clientX - r.l
 cv.addEventListener('pointerdown', e => {
   e.preventDefault(); toLocal(e); touch = e.pointerType === 'touch'; cv.setPointerCapture(e.pointerId);
   if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (err) {} }
-  if (touch && !isFull() && !IN_KAKAO && scene !== 'play') goFull();   // 휴대폰: 메뉴/버튼을 처음 누르면 자동으로 전체화면
-  for (const b of btns) if (mx > b.x && mx < b.x+b.w && my > b.y && my < b.y+b.h){ sfx.click(); b.cb(); return; }
+  const hit = btns.find(b => mx > b.x && mx < b.x+b.w && my > b.y && my < b.y+b.h);
+  if (touch && !autoFullDone && !IN_KAKAO && !(hit && hit.full)){ autoFullDone = true; goFull(); }   // 휴대폰: 첫 터치 때 한 번만 자동 전체화면
+  if (hit){ sfx.click(); hit.cb(); return; }
   if (scene === 'play') grab();
   if (scene === 'ending' && hyp(mx - W/2, my - 330) < 170) endingPoke();
 });
@@ -741,7 +765,6 @@ function drawMenu(){
 
   text('닥스훈트의', W/2, 44, 28, '#fff', 'center', '#7a3f17');
   text('땅굴 대모험', W/2, 92, 58, '#ffd23f', 'center', '#7a3f17');
-  if ((CAN_FULL && !isFull()) || IN_KAKAO) button(W - 78, 16, 60, 54, '⛶', goFull, '#7a3f17');
   ctx.fillStyle = 'rgba(40,20,5,0.55)'; rr(W/2 - 330, 150, 660, 370, 24); ctx.fill();
   const colors = ['#ffb347','#ff8fab','#7cc6fe','#9ad06a','#c79bff'];
   STAGES.forEach((st, i) => {
@@ -886,6 +909,7 @@ function frame(now){
   else if (scene === 'trans') drawTrans();
   else if (scene === 'ending') drawEnding(dt);
   else drawEnd();
+  drawFullBtn();
   if (btns.some(b => mx > b.x && mx < b.x+b.w && my > b.y && my < b.y+b.h)) cur = 'pointer';
   if (scene === 'ending' && hyp(mx - W/2, my - 330) < 170) cur = 'pointer';
   if (cv.style.cursor !== cur) cv.style.cursor = cur;
