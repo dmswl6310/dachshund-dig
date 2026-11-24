@@ -49,23 +49,23 @@ const STAGES = [
     pts:[[30,260],[250,270],[500,250],[750,270],[935,260]] },
   { name:'꼬불빙글',
     pts:[[30,260],[150,260],[240,350],[340,390],[440,350],[520,300],[510,230],[440,210],[380,240],[385,300],[450,320],[560,290],[650,370],[760,420],[860,330],[935,270]] },
-  { name:'쾅! 폭탄 조심',
+  { name:'쾅! 폭탄 조심', tip:'💣 쾅!',
     pts:[[30,270],[100,270],[140,330],[190,270],[240,340],[290,280],[330,370],[300,450],[380,500],[460,450],[430,380],[500,320],[560,250],[620,300],[600,380],[680,440],[760,400],[740,320],[820,280],[880,360],[935,330]],
     bombs:[0.2,0.42,0.62,0.82], bombPeriod:2.2 },
   { name:'빙글빙글 폭탄',
     pts:[[30,330],[140,330],[200,420],[160,520],[260,560],[330,500],[300,430],[240,450],[270,520],[380,540],[480,470],[440,380],[360,330],[300,250],[380,190],[480,220],[520,300],[600,360],[700,330],[660,250],[600,280],[640,350],[760,420],[860,520],[920,440],[880,360],[935,300]],
-    bombs:[0.1,0.22,0.35,0.48,0.6,0.73,0.86], bombPeriod:2.0, bombWarn:0.85, bombR:58 },
-  { name:'토끼 친구들',
+    bombs:[0.1,0.22,0.35,0.48,0.6,0.73,0.86], bombPeriod:2.8, bombWarn:1.0, bombR:58 },
+  { name:'토끼 친구들', tip:'🐰 유혹 주의!',
     pts:[[30,300],[200,310],[350,250],[500,260],[650,360],[800,380],[935,300]], animals:[0.25,0.52,0.78] },
   { name:'유혹의 지그재그',
     pts:[[30,300],[140,300],[220,470],[320,220],[420,470],[520,220],[620,470],[720,260],[820,400],[935,350]],
     animals:[[220,555],[420,555],[620,555]], pull:1.4, bombs:[0.25,0.47,0.7,0.88], bombPeriod:2.2 },
-  { name:'물이 차올라!', flood:190, floodDelay:1.2,
+  { name:'물이 차올라!', tip:'🌊 도망쳐!', flood:190, floodDelay:1.2,
     pts:[[30,350],[200,350],[300,450],[200,540],[400,570],[560,540],[520,460],[400,420],[380,330],[470,260],[600,300],[700,420],[800,540],[900,500],[880,390],[760,330],[640,200],[760,170],[880,220],[930,300],[935,400]] },
-  { name:'깜깜한 땅속', dark:true,
+  { name:'깜깜한 땅속', tip:'🔦 깜깜!', dark:true,
     pts:[[30,400],[180,400],[300,330],[420,300],[500,340],[480,420],[400,430],[380,370],[450,300],[600,260],[720,330],[760,430],[700,500],[620,460],[660,390],[800,360],[935,380]],
     animals:[0.3,0.62,0.88] },
-  { name:'대모험', flood:175, floodDelay:1.5, pull:1.3, bombPeriod:2.2, bombR:56,
+  { name:'대모험', tip:'🏆 마지막!', flood:175, floodDelay:1.5, pull:1.3, bombPeriod:2.2, bombR:56,
     pts:[[30,380],[160,380],[260,300],[220,220],[150,250],[180,320],[300,350],[420,460],[540,500],[620,420],[560,350],[480,380],[520,450],[680,500],[800,420],[760,300],[860,230],[935,260]],
     bombs:[0.18,0.36,0.55,0.7,0.9], animals:[[380,240],[300,545],[650,290]] },
 ];
@@ -437,6 +437,31 @@ function drawDog(x, y, ang, walk, s = 1, hurt = false, charmed = false, happy = 
   ctx.restore();
 }
 
+// 실패했을 때: 벌러덩 누워 네 다리를 쫙 뻗은 닥스훈트 (X 눈, 혀 빼꼼)
+function drawDogDead(x, y, s){
+  const body = '#c0702e', dark = '#7a3f17';
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(4, 14, 48, 6, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = dark;
+  [[-21, -0.75], [-12, -0.3], [13, 0.3], [22, 0.75]].forEach(([lx, r], i) => {
+    ctx.save(); ctx.translate(lx, -8); ctx.rotate(r + Math.sin(T*18 + i)*0.04); rr(-3.5, -19, 7, 19, 3.5); ctx.fill();
+    ctx.fillStyle = '#5b2e10'; ctx.beginPath(); ctx.ellipse(0, -19, 5, 3.5, 0, 0, 7); ctx.fill(); ctx.fillStyle = dark; ctx.restore();
+  });
+  ctx.strokeStyle = body; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-27, 2); ctx.quadraticCurveTo(-38, 6, -46, 4); ctx.stroke();
+  ctx.fillStyle = body; ctx.beginPath(); ctx.ellipse(0, 0, 31, 11.5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#e8ad70'; ctx.beginPath(); ctx.ellipse(1, -5, 22, 5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(30, 12, 6, 10, 0.3, 0, 7); ctx.fill();
+  ctx.fillStyle = body; ctx.beginPath(); ctx.arc(34, 2, 11, 0, 7); ctx.fill();
+  ctx.fillStyle = '#d68a45'; ctx.beginPath(); ctx.ellipse(44, -1, 9.5, 6, -0.15, 0, 7); ctx.fill();
+  ctx.fillStyle = '#2a1a12'; ctx.beginPath(); ctx.arc(52, -4, 3, 0, 7); ctx.fill();
+  ctx.fillStyle = '#ff7a95'; ctx.beginPath(); ctx.ellipse(45, 7, 3.5, 5, 0.3, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#2a1a12'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(33, -1); ctx.lineTo(39, 5); ctx.moveTo(39, -1); ctx.lineTo(33, 5); ctx.stroke();
+  for (let k = 0; k < 3; k++){ const a = T*4 + k*2.1; star(36 + Math.cos(a)*18, -14 + Math.sin(a)*5, 4.5, true); }
+  ctx.restore();
+}
+
 // 유혹하는 동물: 토끼 / 오소리
 function drawAnimal(a, faceLeft){
   ctx.save(); ctx.translate(a.x, a.y); if (faceLeft) ctx.scale(-1, 1);
@@ -611,6 +636,12 @@ function drawPlay(){
 
   for (const p of g.sparks){ ctx.globalAlpha = Math.min(1, p.t*2); star(p.x, p.y, 6, true); ctx.globalAlpha = 1; }
 
+  if (g.st.tip && g.clock < 1){
+    const a = 1 - g.clock, bob = Math.sin(T*3)*3;
+    ctx.globalAlpha = a; ctx.fillStyle = 'rgba(255,248,230,0.95)'; rr(W/2 - 95, 64 + bob, 190, 46, 23); ctx.fill();
+    ctx.strokeStyle = '#ffb347'; ctx.lineWidth = 3; ctx.stroke();
+    text(g.st.tip, W/2, 87 + bob, 26, '#7a3f17'); ctx.globalAlpha = 1;
+  }
   // 잡을 수 있을 때: 강아지 둘레가 반짝이며 숨쉼 (글 없이). 처음엔 손가락이 톡톡
   if (!g.drag && !g.ret){
     const pulse = 1 + Math.sin(T*6)*0.08;
@@ -703,7 +734,7 @@ function drawEnd(){
     text('앗!', W/2, 165, 54, '#ff5a7a', 'center', '#fff');
     const icon = { time: '⏱', bomb: '💣', flood: '🌊', path: '💫' }[r.reason] || '💫';
     ctx.font = `64px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(icon, W/2, 240);
-    drawDog(W/2, 330, 0, 0, 1.3, true);
+    drawDogDead(W/2 - 10, 340, 1.8);
     button(W/2 - 160, 395, 150, 64, '다시하기', () => startStage(G.i), '#9ad06a');
     button(W/2 + 10, 395, 150, 64, '메뉴', () => { scene = 'menu'; }, '#7cc6fe');
   }
