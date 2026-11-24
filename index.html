@@ -5,6 +5,26 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#2b1d14">
 <title>닥스훈트 땅굴 대모험</title>
+<meta name="description" content="꾹 누르고 쭉 끌어서, 닥스훈트와 함께 땅굴을 파요! 폭탄, 토끼, 차오르는 물을 피해 GOAL까지 🐾">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="닥스훈트 땅굴 대모험">
+<meta property="og:title" content="닥스훈트의 땅굴 대모험 🐾">
+<meta property="og:description" content="꾹 누르고 쭉 끌어서, 닥스훈트와 함께 땅굴을 파요! 폭탄, 토끼, 차오르는 물을 피해 GOAL까지">
+<meta property="og:url" content="https://dmswl6310.github.io/dachshund-dig/">
+<meta property="og:image" content="https://dmswl6310.github.io/dachshund-dig/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="닥스훈트의 땅굴 대모험 🐾">
+<meta name="twitter:description" content="꾹 누르고 쭉 끌어서, 닥스훈트와 함께 땅굴을 파요!">
+<meta name="twitter:image" content="https://dmswl6310.github.io/dachshund-dig/og.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
 <style>
   html,body{margin:0;height:100%;background:#2b1d14;overflow:hidden;overscroll-behavior:none;touch-action:none;
@@ -160,12 +180,24 @@ function makeDirt(seed, deep){
 const fog = document.createElement('canvas'); fog.width = W*DPR; fog.height = H*DPR;
 const fctx = fog.getContext('2d'); fctx.scale(DPR, DPR);
 
+// ================== 전체화면 (휴대폰에서 크게) ==================
+const IN_KAKAO = /KAKAOTALK/i.test(navigator.userAgent);
+const CAN_FULL = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+function goFull(){
+  if (IN_KAKAO){ location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href); return; }   // 카톡 → 기본 브라우저로 열기
+  if (!CAN_FULL || isFull()) return;
+  const el = document.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen;
+  try { const r = req.call(el, { navigationUI: 'hide' }); if (r && r.then) r.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch (e) {}
+}
+
 // ================== 입력 ==================
 let mx = W/2, my = H/2, btns = [], touch = false;
 function toLocal(e){ const r = cv.getBoundingClientRect(); mx = (e.clientX - r.left)/r.width*W; my = (e.clientY - r.top)/r.height*H; }
 cv.addEventListener('pointerdown', e => {
   e.preventDefault(); toLocal(e); touch = e.pointerType === 'touch'; cv.setPointerCapture(e.pointerId);
   if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (err) {} }
+  if (touch && !isFull() && !IN_KAKAO && scene !== 'play') goFull();   // 휴대폰: 메뉴/버튼을 처음 누르면 자동으로 전체화면
   for (const b of btns) if (mx > b.x && mx < b.x+b.w && my > b.y && my < b.y+b.h){ sfx.click(); b.cb(); return; }
   if (scene === 'play') grab();
   if (scene === 'ending' && hyp(mx - W/2, my - 330) < 170) endingPoke();
@@ -708,6 +740,7 @@ function drawMenu(){
 
   text('닥스훈트의', W/2, 44, 28, '#fff', 'center', '#7a3f17');
   text('땅굴 대모험', W/2, 92, 58, '#ffd23f', 'center', '#7a3f17');
+  if ((CAN_FULL && !isFull()) || IN_KAKAO) button(W - 78, 16, 60, 54, '⛶', goFull, '#7a3f17');
   ctx.fillStyle = 'rgba(40,20,5,0.55)'; rr(W/2 - 330, 150, 660, 370, 24); ctx.fill();
   const colors = ['#ffb347','#ff8fab','#7cc6fe','#9ad06a','#c79bff'];
   STAGES.forEach((st, i) => {
@@ -798,6 +831,46 @@ function drawEnding(dt){
   }
 }
 
+// ================== 공유 썸네일 / 앱 아이콘 (index.html#og, #icon 으로 열어 캡처) ==================
+async function drawPoster(kind){
+  const PW = kind === 'icon' ? 512 : 1200, PH = kind === 'icon' ? 512 : 630, gy = kind === 'icon' ? 120 : 190;
+  try { await document.fonts.load(`40px Jua`); } catch (e) {}
+  cv.width = PW; cv.height = PH; cv.style.cssText = `width:${PW}px;height:${PH}px;border-radius:0;box-shadow:none`;
+  document.body.style.cssText = 'margin:0;display:block;height:auto;background:#000';
+  const rot = document.getElementById('rotate'); if (rot) rot.remove();
+  ctx.setTransform(1, 0, 0, 1, 0, 0); T = 0.3;
+  const sk = ctx.createLinearGradient(0, 0, 0, gy); sk.addColorStop(0, '#8fd3ff'); sk.addColorStop(1, '#d8f1ff');
+  ctx.fillStyle = sk; ctx.fillRect(0, 0, PW, gy);
+  const dirt = makeDirt(7), k = dirt.width / W;
+  ctx.drawImage(dirt, 0, GY*k, W*k, (H - GY)*k, 0, gy, PW, PH - gy);
+  ctx.fillStyle = '#ffe066'; ctx.beginPath(); ctx.arc(PW - 70, 60, 34, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  for (const [x, y] of kind === 'icon' ? [[60, 40]] : [[650, 50], [880, 95], [90, 30]]){ ctx.beginPath(); ctx.arc(x, y, 18, 0, 7); ctx.arc(x+20, y-9, 23, 0, 7); ctx.arc(x+42, y, 17, 0, 7); ctx.fill(); }
+  ctx.fillStyle = '#6cc04a'; ctx.beginPath(); ctx.moveTo(0, gy + 12);
+  for (let x = 0; x <= PW; x += 14) ctx.lineTo(x, gy - 5 - (Math.floor(x/14) % 2 ? 6 : 0));
+  ctx.lineTo(PW, gy + 12); ctx.fill(); ctx.fillStyle = '#4fa233'; ctx.fillRect(0, gy + 5, PW, 9);
+  const tunnel = (pts, w1, w2) => { for (const [w, c] of [[w1, '#4a2a16'], [w2, '#5e3820']]){ ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); } };
+  if (kind === 'icon'){
+    tunnel([[-20, 330], [120, 300], [250, 330]], 92, 74);
+    drawDog(225, 320, -0.08, 1.2, 4.0, false, false, true);
+    return;
+  }
+  const way = []; for (let x = -20; x <= 790; x += 10) way.push([x, 440 + Math.sin(x*0.012)*55 - (x > 600 ? (x - 600)*0.05 : 0)]);
+  tunnel(way, 66, 52);
+  ctx.strokeStyle = 'rgba(255,232,195,0.25)'; ctx.lineWidth = 50; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(800, 425); ctx.quadraticCurveTo(980, 330, 1230, 420); ctx.stroke();
+  ctx.strokeStyle = 'rgba(250,225,185,0.85)'; ctx.lineWidth = 7; ctx.stroke();
+  bone(520, way[54][1], 2.2, -0.3);
+  ctx.fillStyle = 'rgba(255,60,60,0.22)'; ctx.beginPath(); ctx.arc(1000, 372, 62, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,70,70,0.85)'; ctx.lineWidth = 4; ctx.setLineDash([10, 8]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.save(); ctx.translate(1000, 290); ctx.scale(2.2, 2.2); drawBomb(0, 0); ctx.restore();
+  ctx.save(); ctx.translate(1090, 540); ctx.scale(2.2, 2.2); drawAnimal({ x: 0, y: 0, type: 'rabbit', ph: 0 }, true); ctx.restore();
+  drawDog(790, 425, -0.12, 1.3, 3.0, false, false, true);
+  text('닥스훈트의', 300, 62, 46, '#fff', 'center', '#7a3f17');
+  text('땅굴 대모험', 300, 135, 96, '#ffd23f', 'center', '#7a3f17');
+  ctx.fillStyle = 'rgba(40,20,5,0.72)'; rr(70, 548, 470, 56, 28); ctx.fill();
+  text('꾹 누르고 쭉 끌어서 굴을 파요! 🐾', 305, 577, 28, '#fff');
+}
+
 // ================== 메인 루프 ==================
 let last = performance.now();
 function frame(now){
@@ -817,7 +890,9 @@ function frame(now){
   if (cv.style.cursor !== cur) cv.style.cursor = cur;
   requestAnimationFrame(frame);
 }
-requestAnimationFrame(frame);
+const POSTER = location.hash.slice(1);
+if (POSTER === 'og' || POSTER === 'icon') drawPoster(POSTER);
+else requestAnimationFrame(frame);
 </script>
 </body>
 </html>
